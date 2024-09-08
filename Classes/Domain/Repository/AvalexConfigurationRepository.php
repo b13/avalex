@@ -56,15 +56,22 @@ class AvalexConfigurationRepository extends AbstractRepository
         // Order by "global" to get the individual configuration records first.
         $websiteRoot = (int)$websiteRoot;
         if (version_compare(Typo3Utility::getTypo3Version(), '8.4', '>')) {
-            $result = $this
+            $query = $this
                 ->getQueryBuilder(self::TABLE)
                 ->select(...GeneralUtility::trimExplode(',', $select))
                 ->from(self::TABLE)
                 ->where($this->getQueryBuilder(self::TABLE)->expr()->inSet('website_root', $websiteRoot))
                 ->orWhere($this->getQueryBuilder(self::TABLE)->expr()->eq('global', 1))
-                ->orderBy('global', 'ASC')
-                ->execute()
-                ->fetch();
+                ->orderBy('global', 'ASC');
+            if (version_compare(Typo3Utility::getTypo3Version(), '12.4', '>')) {
+                $result = $query
+                    ->executeQuery()
+                    ->fetchAssociative();
+            } else {
+                $result = $query
+                    ->execute()
+                    ->fetch();
+            }
         } else {
             $result = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
                 $select,
